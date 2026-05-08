@@ -4,8 +4,11 @@ Modèle Enoria pour affichage de la liste des messes dominicales, quotidiennes e
 Inspiré d'un modèle de Erwann Herpe
 
 Nom du modèle : DHG - planning messes et confessions
+
 Contact : guillaume.desnoues@gmail.com
+
 Paroisse : Doyenné du Haut-Gresivaudan
+
 repo. Github : [gdesnoues\Enoria-DHG-planning-messes-confessions](https://github.com/gdesnoues/Enoria-DHG-planning-messes-confessions)
 
 options d'affichage :
