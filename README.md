@@ -6,6 +6,9 @@ Inspiré d'un modèle de Erwann Herpe
 Nom du modèle : DHG - planning messes et confessions
 Contact : guillaume.desnoues@gmail.com
 Paroisse : Doyenné du Haut-Gresivaudan
+repo. Github : [gdesnoues\Enoria-DHG-planning-messes-confessions](https://github.com/gdesnoues/Enoria-DHG-planning-messes-confessions)
+
+options d'affichage :
 
 - messes dominicales et fêtes (avec couleur liturgique + séparation par date, sauf Samedi/Dimanche regroupés)
 - messes quotidiennes (avec couleur liturgique)
