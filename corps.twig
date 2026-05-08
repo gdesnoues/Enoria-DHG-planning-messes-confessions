@@ -1,0 +1,316 @@
+<html>
+{# DHG - planning messes et confessions
+Modèle pour affichage de la liste des messes dominicales, quotidiennes et confessions
+Inspiré d'un modèle de erwann herpe
+Contact de ce modèle : guillaume.desnoues@gmail.com
+#}
+{% set previousDateTime = null %}
+{% set previousDay = null %}
+{% set _hasDominicales = false %}
+{% set _hasQuotidiennes = false %}
+{% set _hasConfessions = false %}
+
+<body>
+<div class="print-date">Édité le {{"now"|date("d/m/Y")}}</div>
+{% if messes %}
+	{#**************************************** définition des types d'événements présents ***************************************#}
+	{% for messe in messes %}
+		{% if options.debug %}
+			<hr>
+			<pre>
+			messe.typeCelebration : {{ messe.typeCelebration }}
+			messe.type : {{ messe.type }}
+			messe.dateheure : {{ messe.dateheure|format_datetime('short', 'short', locale: 'fr') }}
+			messe.reservationEglise.titre : {{ messe.reservationEglise.titre }}
+			messe.reservationEglise.salle.nom : {{ messe.reservationEglise.salle.nom }}
+			messe.reservationEglise.salle.adresse.ville : {{ messe.reservationEglise.salle.adresse.ville }}
+			messe.informationsLiturgiques.couleur : {{ messe.informationsLiturgiques.couleur }}
+			messe.informations : {{ messe.informations }}
+			messe.celebrants : {{ messe.celebrants|map(c => c.personne.prenom)|join(', ') }}
+			</pre>
+		{% endif %}
+
+		{# messes dominicales #}
+		{% if messe.type == "dominicale" and messe.typeCelebration == "messe" %}
+			{% set _hasDominicales = true %}
+	
+		{# messes quotidiennes #}
+		{% elseif messe.type == "quotidienne" and messe.typeCelebration == "messe" %}
+			{% set _hasQuotidiennes = true %}
+
+		{# confessions #}
+		{% elseif messe.typeCelebration == "confessions" %}
+			{% set _hasConfessions = true %}
+
+		{% endif %}
+	{% endfor %}
+
+	{#**************************************** tableau des messes dominicales ***************************************************#}
+	{% if _hasDominicales and options.printdominicales %}
+		<div class="header">
+			{% if app.user.entiteactive.logo %}
+				<img src="{{ dir_absolute_public }}/images/{{ asset(app.user.entiteactive.logo) }}" width="80"/>
+			{% endif %}
+			<h1 style="float:right;">{{ app.user.entiteactive.nom }}</h1>
+		</div>
+		<div class="main">
+			<hr>
+			<h2>Messes dominicales et fêtes</h2>
+			<h3>Période du {{ start|format_datetime('short', 'none', locale: 'fr') }} au {{ end|format_datetime('short', 'none', locale: 'fr') }}</h3>
+			<table cellspacing="0" width="100%">
+				{% set previousDateTime = null %}
+				{% set previousDay = null %}
+				{% for messe in messes|filter(messe => messe.type == 'dominicale' and messe.typeCelebration == 'messe') %}
+					{#******************** vars *****************************************#}
+					{% set _today = messe.dateheure|format_datetime('none','none',pattern='EEEE') %}
+					{% set _tomorrow = messe.dateheure|date_modify("+1 day") %}
+					{% set _place = messe.reservationEglise.salle.adresse.ville %}
+
+					{#******************** Couleur liturgique ***************************#}
+					{% set colorMap = {'blanc': 'white', 'rose': 'pink', 'rouge': 'red', 'noir': 'black', 'vert': 'green', 'violet': 'purple'} %}
+					{% set _color = colorMap[messe.informationsLiturgiques.couleur] ?? "" %}
+
+					{#******************** bandeau entête de jour ***********************#}
+					{# Affiche un bandeau de séparation entre les jours, sauf si les messes sont le même jour ou si les messes sont le samedi et le dimanche du même week-end #}
+					{% if previousDay == null or messe.dateheure|date("W") != previousDateTime|date("W") or ( _today != previousDay and messe.dateheure|date("D") != "Sun" ) %}
+						<tr class="titre">
+							<td colspan="4" rowspan="1" class= "{{ messe.dateheure|date('D') in ['Sat', 'Sun'] ? 'bandeauDominicale' : 'bandeauFete' }}">
+								{% if messe.dateheure|date("D") == "Sat" %}
+									{{ messe.dateheure|format_datetime('none','none',pattern='EE d')|capitalize }}
+									{% if messe.dateheure|date("M") !=  _tomorrow|date("M") %}
+										{# si mois different #}
+										{{ messe.dateheure|format_datetime('none','none',pattern='MMMM')|capitalize }}
+									{% endif %}
+									et
+									{{ _tomorrow|format_datetime('none','none',pattern='EE d MMMM')|capitalize }}
+								{% else %}
+									{{ messe.dateheure|format_datetime('none','none',pattern='EE d MMMM')|capitalize }}
+								{% endif %}
+							</td>
+						</tr>
+					{% endif %}
+
+					{#******************** ligne de célébration *************************#}
+					<tr style="{{ _today != previousDay ? 'border-top: 1px dashed black' : '' }}">
+
+						{#***** Jour de la celebration *****#}
+						<td class="jour" width="18%">
+							{% if _today != previousDay %}
+								{{ _today|upper }}
+
+								{# Couleur liturgique #}
+								{% if _color != "" %}
+									<span style="color: {{ _color == 'white' ? 'black' : _color }};">{{ _color == 'white' ? '□' : '■' }}</span>
+								{% else %}
+									<span>{{ messe.informationsLiturgiques.couleur }}</span>
+								{% endif %}
+							{% endif %}
+						</td>
+
+						{#***** Heure Lieu (Ville) - notes *****#}
+						<td class="lieu" colspan="2" rowspan="1" width="62%">
+							{{ messe.dateheure|date('H:i') }}
+
+							{# Lieu si non vide et ne commence pas par ! #}
+							{{ (_place != "" and _place|first != "!") ? _place : "" }}
+
+							{# Affiche le nom de la salle si il ne commence pas par é (pour afficher le nom des maisons de retraite) #}
+							{% if messe.reservationEglise.salle.nom|first != "é" %}
+								({{messe.reservationEglise.salle.nom}})
+							{% endif %}
+
+							{# Notes si non vide et ne commence pas par un !, on affiche pas le - si le lieu n'est pas affiché #}
+							{% if messe.informations != "" and messe.informations|first != "!" %}
+								{{ (_place != "" and _place|first != "!") ? '- ' : '' }}
+								<span style="font-style: italic; font-size: small; font-weight: normal;">{{ messe.informations }}</span>
+							{% endif %}
+						</td>
+						
+						{#***** nom des celebrants *****#}
+						<td class="celebrant" width="20%">
+							{% if messe.celebrants is not empty %}
+								{{ 'P. ' ~ (messe.celebrants|map(c => c.personne.prenom)|join(' / P. ')) }}
+							{% endif %}
+						</td>
+					</tr>
+
+					{#******************** MAJ des dates pour la gestion des séparateurs ***********#}
+					{% set previousDateTime = messe.dateheure %}
+					{% set previousDay = _today %}
+				{% endfor %}
+			</table>
+		</div>
+		<div class="footer">
+			retrouvez toutes les informations sur {{ app.user.entiteactive.siteWeb }}
+		</div>
+	{% endif %}
+
+	{#**************************************** tableau des messes quotidiennes **************************************************#}
+	{% if _hasQuotidiennes and options.printquotidiennes %}
+		{% if options.printdominicales %}<div class="page_break"></div>{% endif %}
+		<div class="header">
+			{% if app.user.entiteactive.logo %}
+				<img src="{{ dir_absolute_public }}/images/{{ asset(app.user.entiteactive.logo) }}" width="80"/>
+			{% endif %}
+			<h1 style="float:right;">{{ app.user.entiteactive.nom }}</h1>
+		</div>
+		<div class="main">
+			<hr>
+			<h2>Messes quotidiennes</h2>
+			<h3>Période du {{ start|format_datetime('short', 'none', locale: 'fr') }} au {{ end|format_datetime('short', 'none', locale: 'fr') }}</h3>
+			<table cellspacing="0" width="100%">
+				{% set previousDateTime = null %}
+				{% set previousDay = null %}
+				{% for messe in messes|filter(messe => messe.type == 'quotidienne' and messe.typeCelebration == 'messe') %}
+					{#******************** vars *****************************************#}
+					{% set _today = messe.dateheure|format_datetime('none','none',pattern='EEEE') %}
+					{% set _tomorrow = messe.dateheure|date_modify("+1 day") %}
+					{% set _place = messe.reservationEglise.salle.adresse.ville %}
+
+					{#******************** Couleur liturgique ***************************#}
+					{% set colorMap = {'blanc': 'white', 'rose': 'pink', 'rouge': 'red', 'noir': 'black', 'vert': 'green', 'violet': 'purple'} %}
+					{% set _color = colorMap[messe.informationsLiturgiques.couleur] ?? "" %}
+
+					{#******************** bandeau entête de jour ***********************#}
+					{% if previousDateTime == null or _today != previousDay %}
+						<tr class="titre">
+							<td colspan="4" rowspan="1" class= "bandeauDominicale">
+								{{ messe.dateheure|format_datetime('none','none',pattern='EE d MMMM')|capitalize }}
+							</td>
+						</tr>
+					{% endif %}
+
+					{#******************** ligne de célébration *************************#}
+					<tr style="{{ _today != previousDay ? 'border-top: 1px dashed black' : '' }}">
+
+						{#***** Jour de la celebration *****#}
+						<td class="jour" width="18%">
+							{% if _today != previousDay %}
+								{{ _today|upper }}
+
+								{# Couleur liturgique #}
+								{% if _color != "" %}
+									<span style="color: {{ _color == 'white' ? 'black' : _color }};">{{ _color == 'white' ? '□' : '■' }}</span>
+								{% else %}
+									<span>{{ messe.informationsLiturgiques.couleur }}</span>
+								{% endif %}
+							{% endif %}
+						</td>
+
+						{#***** Heure Lieu (Ville) - notes *****#}
+						<td class="lieu" colspan="2" rowspan="1" width="62%">
+							{{ messe.dateheure|date('H:i') }}
+
+							{# Lieu si non vide et ne commence pas par ! #}
+							{{ _place != "" and _place|first != "!" ? _place : "" }}
+
+							{# Affiche le nom de la salle si il ne commence pas par é (pour afficher le nom des maisons de retraite) #}
+							{% if messe.reservationEglise.salle.nom|first != "é" %}
+								({{messe.reservationEglise.salle.nom}})
+							{% endif %}
+
+							{# Notes si non vide et ne commence pas par un !, ne pas affiche le - si le lieu n'est pas affiché #}
+							{% if messe.informations != "" and messe.informations|first != "!" %}
+								{{ _place != "" and _place|first != "!" ? '- ' : '' }}
+								<span style="font-style: italic; font-size: small; font-weight: normal;">{{ messe.informations }}</span>
+							{% endif %}
+						</td>
+						
+						{#***** nom des celebrants *****#}
+						<td class="celebrant" width="20%">
+							{% if messe.celebrants is not empty %}
+								{{ 'P. ' ~ (messe.celebrants|map(c => c.personne.prenom)|join(' / P. ')) }}
+							{% endif %}
+						</td>
+					</tr>
+
+					{#******************** MAJ des dates pour la gestion des séparateurs ***********#}
+					{% set previousDateTime = messe.dateheure|date('d-m-Y') %}
+					{% set previousDay = _today %}
+				{% endfor %}
+			</table>
+		</div>
+		<div class="footer">
+			retrouvez toutes les informations sur {{ app.user.entiteactive.siteWeb }}
+		</div>
+	{% endif %}
+
+	{#**************************************** tableau des confessions **********************************************************#}
+	{% if _hasConfessions and options.printconfessions %}
+		{% if options.printdominicales or options.printquotidiennes %}<div class="page_break"></div>{% endif %}
+		<div class="header">
+			{% if app.user.entiteactive.logo %}
+				<img src="{{ dir_absolute_public }}/images/{{ asset(app.user.entiteactive.logo) }}" width="80"/>
+			{% endif %}
+			<h1 style="float:right;">{{ app.user.entiteactive.nom }}</h1>
+		</div>
+		<div class="main">
+			<hr>
+			<h2>Confessions</h2>
+			<h3>Période du {{ start|format_datetime('short', 'none', locale: 'fr') }} au {{ end|format_datetime('short', 'none', locale: 'fr') }}</h3>
+			<table cellspacing="0" width="100%">
+				{% set previousDateTime = null %}
+				{% set previousDay = null %}
+				{% for messe in messes|filter(messe => messe.typeCelebration == 'confessions') %}
+					{#******************** vars *****************************************#}
+					{% set _today = messe.dateheure|format_datetime('none','none',pattern='EEEE') %}
+					{% set _tomorrow = messe.dateheure|date_modify("+1 day") %}
+					{% set _place = messe.reservationEglise.salle.adresse.ville %}
+
+					{#******************** bandeau entête de jour ***********************#}
+					{% if previousDateTime == null or _today != previousDay %}
+						<tr class="titre">
+							<td colspan="4" rowspan="1" class= "bandeauDominicale">
+								{{ messe.dateheure|format_datetime('none','none',pattern='EE d MMMM')|capitalize }}
+							</td>
+						</tr>
+					{% endif %}
+
+					{#******************** ligne de célébration *************************#}
+					<tr style="{{ _today != previousDay ? 'border-top: 1px dashed black' : '' }}">
+
+						{#***** Jour de la celebration *****#}
+						<td class="jour" width="18%">
+							{% if _today != previousDay %}
+								{{ _today|upper }}
+							{% endif %}
+						</td>
+
+						{#***** Heure Lieu (Ville) - notes *****#}
+						<td class="lieu" colspan="2" rowspan="1" width="62%">
+							{{ messe.dateheure|date('H:i') }}
+
+							{# Lieu si non vide et ne commence pas par ! #}
+							{{ _place != "" and _place|first != "!" ? _place : "" }}
+
+							{# Notes si non vide et ne commence pas par un !, ne pas affiche le - si le lieu n'est pas affiché #}
+							{% if messe.informations != "" and messe.informations|first != "!" %}
+								{{ (_place != "" and _place|first != "!") ? '- ' : '' }}
+								<span style="font-style: italic; font-size: small; font-weight: normal;">{{ messe.informations }}</span>
+							{% endif %}
+						</td>
+						
+						{#***** nom des celebrants *****#}
+						<td class="celebrant" width="20%">
+							{% if messe.celebrants is not empty %}
+								{{ 'P. ' ~ (messe.celebrants|map(c => c.personne.prenom)|join(' / P. ')) }}
+							{% endif %}
+						</td>
+					</tr>
+
+					{#******************** MAJ des dates pour la gestion des séparateurs ***********#}
+					{% set previousDateTime = messe.dateheure|date('d-m-Y') %}
+					{% set previousDay = _today %}
+				{% endfor %}
+			</table>
+		</div>
+		<div class="footer">
+			retrouvez toutes les informations sur {{ app.user.entiteactive.siteWeb }}
+		</div>	
+	{% endif %}
+
+{% else %}
+	Aucune donnée n'a été trouvée
+{% endif %}
+</body>
+</html>
