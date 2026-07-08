@@ -36,4 +36,4 @@ options d'affichage :
 
 - Affichage de la note de la célébration si elles ne commencent pas par un ! (critère de non\-affichage)
 - Affichage du lieu (ville de l'adresse postale) s’il ne commencent pas par un ! (critère de non\-affichage)
-- Affichage du nom de la salle entre () si le nom ne commence pas par un é (pour ne pas l'afficher pour les "église xxxxx", mais l'afficher pour les maisons de retraite, par exemple)
+- Affichage du nom de la salle entre () si le nom ne commence pas par un é (pour ne pas l'afficher pour les "église xxxxx", mais l'afficher pour les maisons de retraite, par exemple) ou ne commence pas par un !

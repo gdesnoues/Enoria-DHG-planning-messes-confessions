@@ -8,6 +8,12 @@ The model repo. is her : [gdesnoues\Enoria-DHG-planning-messes-confessions](http
 
 - none
 
+## [1.1] - 2026-07-08
+
+### Fixed
+
+- Location between () not displayed when it starts with a !
+
 ## [1.0] - 2026-05-08
 
 ### Added

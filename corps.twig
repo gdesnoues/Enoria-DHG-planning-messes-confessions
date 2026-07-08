@@ -114,8 +114,8 @@ Contact de ce modèle : guillaume.desnoues@gmail.com
 							{# Lieu si non vide et ne commence pas par ! #}
 							{{ (_place != "" and _place|first != "!") ? _place : "" }}
 
-							{# Affiche le nom de la salle si il ne commence pas par é (pour afficher le nom des maisons de retraite) #}
-							{% if messe.reservationEglise.salle.nom|first != "é" %}
+							{# Affiche le nom de la salle si il ne commence pas par é (pour afficher le nom des maisons de retraite) et ne commence pas par ! #}
+							{% if messe.reservationEglise.salle.nom|first != "é" and _place|first != "!") %}
 								({{messe.reservationEglise.salle.nom}})
 							{% endif %}
 
@@ -204,8 +204,8 @@ Contact de ce modèle : guillaume.desnoues@gmail.com
 							{# Lieu si non vide et ne commence pas par ! #}
 							{{ _place != "" and _place|first != "!" ? _place : "" }}
 
-							{# Affiche le nom de la salle si il ne commence pas par é (pour afficher le nom des maisons de retraite) #}
-							{% if messe.reservationEglise.salle.nom|first != "é" %}
+							{# Affiche le nom de la salle si il ne commence pas par é (pour afficher le nom des maisons de retraite) et ne commence pas par ! #}
+							{% if messe.reservationEglise.salle.nom|first != "é" and _place|first != "!") %}
 								({{messe.reservationEglise.salle.nom}})
 							{% endif %}
 
